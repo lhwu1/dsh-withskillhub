@@ -76,6 +76,18 @@ export interface SkillHubOverview {
   truncated: boolean
 }
 
+/** Origin state for a SkillHub response served to the browser. */
+export interface SkillHubCacheInfo {
+  refreshedAt: string
+  state: 'cached' | 'live' | 'stale'
+}
+
+/** Same-origin SkillHub response with its cache state. */
+export interface SkillHubResponse<T> {
+  cache: SkillHubCacheInfo
+  data: T
+}
+
 /** On-disk record for a successfully installed marketplace skill. */
 export interface InstalledSkill {
   /** Market description displayed in local skill management. */
@@ -89,6 +101,16 @@ export interface InstalledSkill {
   skillName: string
   slug: string
   version?: string
+}
+
+/** Local files and remote release information shown for an installed skill. */
+export interface InstalledSkillDetail {
+  changelog?: string
+  files: readonly string[]
+  latestVersion?: string
+  overview?: SkillHubOverview
+  record: InstalledSkill
+  sourceUrl: string
 }
 
 /** Result of comparing one installed skill against its current SkillHub record. */

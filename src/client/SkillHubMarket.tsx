@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
-import type { InstalledSkill, SkillHubCategory, SkillHubDetail, SkillHubOverview, SkillHubPage, SkillHubSkill } from '../host/types.ts'
+import type { InstalledSkill, SkillHubCategory, SkillHubDetail, SkillHubOverview, SkillHubPage, SkillHubResponse, SkillHubSkill } from '../host/types.ts'
 import { errorMessage, formatCount, requestJson } from './api.ts'
 import { ensureSkillHubStyles } from './styles.ts'
 
@@ -42,10 +42,10 @@ export function SkillHubMarket({ t }: Props): JSX.Element {
 
   useEffect(() => { ensureSkillHubStyles() }, [])
   useEffect(() => {
-    void requestJson<readonly SkillHubCategory[]>('/dsh-withskillhub/categories.json')
-      .then(setCategories)
-      .catch(error => setMessage(errorMessage(error)))
-    void refreshInstalled().catch(error => setMessage(errorMessage(error)))
+    void requestJson<SkillHubResponse<readonly SkillHubCategory[]>>('/dsh-withskillhub/categories.json')
+      .then(response => setCategories(response.data))
+      .catch(() => setMessage(t('marketError')))
+    void refreshInstalled().catch(() => setMessage(t('marketError')))
   }, [refreshInstalled])
   useEffect(() => {
     let live = true
@@ -54,12 +54,16 @@ export function SkillHubMarket({ t }: Props): JSX.Element {
     const params = new URLSearchParams({ page: String(page), pageSize: String(PAGE_SIZE), sortBy })
     if (category.length > 0) params.set('category', category)
     if (submittedKeyword.length > 0) params.set('keyword', submittedKeyword)
-    void requestJson<SkillHubPage>(`/dsh-withskillhub/catalog.json?${params}`)
-      .then(value => { if (live) setCatalogue(value) })
-      .catch(error => { if (live) setMessage(errorMessage(error)) })
+    void requestJson<SkillHubResponse<SkillHubPage>>(`/dsh-withskillhub/catalog.json?${params}`)
+      .then(response => {
+        if (!live) return
+        setCatalogue(response.data)
+        if (response.cache.state === 'stale') setMessage(t('staleMarket'))
+      })
+      .catch(() => { if (live) setMessage(t('marketError')) })
       .finally(() => { if (live) setLoading(false) })
     return () => { live = false }
-  }, [category, page, sortBy, submittedKeyword])
+  }, [category, page, sortBy, submittedKeyword, t])
 
   const installedKeys = useMemo(() => new Set(installed.map(item => `${item.namespace ?? ''}/${item.slug}`)), [installed])
   const selectedInstalled = detail === null ? false : installedKeys.has(`${detail.namespace?.handle ?? ''}/${detail.slug}`)
@@ -76,15 +80,19 @@ export function SkillHubMarket({ t }: Props): JSX.Element {
     setMessage(null)
     const params = new URLSearchParams({ slug: skill.slug })
     if (namespace !== undefined) params.set('namespace', namespace)
-    void requestJson<SkillHubDetail>(`/dsh-withskillhub/detail.json?${params}`)
-      .then(value => { if (detailRequest.current === request) setDetail(value) })
-      .catch(error => { if (detailRequest.current === request) setMessage(errorMessage(error)) })
+    void requestJson<SkillHubResponse<SkillHubDetail>>(`/dsh-withskillhub/detail.json?${params}`)
+      .then(response => {
+        if (detailRequest.current !== request) return
+        setDetail(response.data)
+        if (response.cache.state === 'stale') setMessage(t('staleMarket'))
+      })
+      .catch(() => { if (detailRequest.current === request) setMessage(t('marketError')) })
       .finally(() => { if (detailRequest.current === request) setLoadingDetail(false) })
-    void requestJson<SkillHubOverview>(`/dsh-withskillhub/overview.json?${params}`)
-      .then(value => { if (detailRequest.current === request) setOverview(value) })
+    void requestJson<SkillHubResponse<SkillHubOverview>>(`/dsh-withskillhub/overview.json?${params}`)
+      .then(response => { if (detailRequest.current === request) setOverview(response.data) })
       .catch(() => undefined)
       .finally(() => { if (detailRequest.current === request) setLoadingOverview(false) })
-  }, [])
+  }, [t])
 
   const closeDetail = useCallback(() => {
     detailRequest.current += 1

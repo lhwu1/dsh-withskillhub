@@ -43,13 +43,16 @@ const stylesheet = `
 .skillhubApiKeyNotice{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:4px}
 .skillhubDetailMeta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 20px;margin:24px 0;color:var(--dsh-muted,#5e6673);font-size:13px}
 .skillhubDetailMeta div{min-width:0}.skillhubDetailMeta dt{margin:0 0 3px;color:var(--dsh-foreground,#16181d);font-size:12px;font-weight:650}.skillhubDetailMeta dd{margin:0;overflow-wrap:anywhere}
+.skillhubDetailSection{margin-top:24px;border-top:1px solid var(--dsh-border,#e5e7eb);padding-top:16px}.skillhubDetailSection h5{margin:0;font-size:13px;line-height:20px}
+.skillhubFileList{max-height:220px;overflow:auto;margin:8px 0 0;padding-left:20px;color:var(--dsh-muted,#5e6673);font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px;line-height:20px;overflow-wrap:anywhere}
 .skillhubState{margin:12px 0;color:var(--dsh-muted,#5e6673);font-size:13px;line-height:20px}
 .skillhubError{color:#b42318}
-.skillhubManagement{min-height:0;height:100%;overflow:auto;padding:24px 28px 32px;box-sizing:border-box;background:var(--dsh-surface,#fff);color:var(--dsh-foreground,#16181d)}
+.skillhubManagement{position:relative;min-height:0;height:100%;overflow:auto;padding:24px 28px 32px;box-sizing:border-box;background:var(--dsh-surface,#fff);color:var(--dsh-foreground,#16181d)}
 .skillhubManagementHeader{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;border-bottom:1px solid var(--dsh-border,#e5e7eb)}
 .skillhubManagedList{display:grid;gap:8px;margin:20px 0 0;padding:0;list-style:none}
 .skillhubManagedRow{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:16px;align-items:center;border:1px solid var(--dsh-border,#e5e7eb);border-radius:6px;padding:14px 16px;background:var(--dsh-surface,#fff)}
 .skillhubManagedRow[data-disabled=true]{opacity:.65}
+.skillhubManagedOpen{min-width:0;border:0;background:transparent;color:inherit;padding:0;text-align:left;font:inherit;cursor:pointer}.skillhubManagedOpen:hover strong{text-decoration:underline}.skillhubManagedOpen:focus-visible{outline:2px solid var(--dsh-accent,#1376d3);outline-offset:3px}
 .skillhubManagedIdentity{display:grid;gap:3px;min-width:0}.skillhubManagedIdentity strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.skillhubManagedIdentity span{overflow:hidden;color:var(--dsh-muted,#5e6673);font-size:12px;text-overflow:ellipsis;white-space:nowrap}
 .skillhubManagedIdentity .skillhubManagedDescription{display:-webkit-box;overflow:hidden;color:var(--dsh-muted,#5e6673);font-size:13px;line-height:19px;text-overflow:clip;white-space:normal;-webkit-box-orient:vertical;-webkit-line-clamp:2}
 .skillhubManagedIdentity .skillhubManagedSource{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}

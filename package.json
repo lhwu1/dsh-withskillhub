@@ -2,6 +2,22 @@
   "name": "dsh-withskillhub",
   "version": "0.1.0",
   "description": "SkillHub marketplace bundle for DeepSeek Harness",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lhwu1/dsh-withskillhub.git"
+  },
+  "homepage": "https://github.com/lhwu1/dsh-withskillhub",
+  "bugs": {
+    "url": "https://github.com/lhwu1/dsh-withskillhub/issues"
+  },
+  "license": "MIT",
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "plugin",
+    "skillhub",
+    "skills"
+  ],
   "type": "module",
   "main": "lib/host/index.mjs",
   "types": "lib/host/index.d.mts",
@@ -19,8 +35,10 @@
   },
   "files": [
     "lib/",
+    "docs/",
     "cordis.patch.yml",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "dsh": {
     "bundle": {
@@ -41,7 +59,11 @@
     "dev": "tsdown --watch",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "validate": "npm run typecheck && npm run test && npm run build"
+    "validate": "npm run typecheck && npm run test && npm run build",
+    "prepack": "npm run validate"
+  },
+  "engines": {
+    "node": ">=22.19"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "*",

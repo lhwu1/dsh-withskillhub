@@ -17,6 +17,7 @@ export type SkillHubLocaleKey =
   | 'loadMore'
   | 'empty'
   | 'marketError'
+  | 'staleMarket'
   | 'installedMessage'
   | 'version'
   | 'author'
@@ -28,6 +29,13 @@ export type SkillHubLocaleKey =
   | 'managementDescription'
   | 'noInstalled'
   | 'overview'
+  | 'viewDetails'
+  | 'files'
+  | 'source'
+  | 'changeLog'
+  | 'latestVersion'
+  | 'noOverview'
+  | 'noChangeLog'
   | 'overviewTruncated'
   | 'openMarketplace'
   | 'openSkillHub'
@@ -68,6 +76,7 @@ export const zh: Record<SkillHubLocaleKey, string> = {
   loadMore: '加载更多',
   empty: '没有符合条件的技能。',
   marketError: '技能市场暂时不可用。',
+  staleMarket: 'SkillHub 暂时不可用，正在显示上次成功获取的内容。',
   installedMessage: '已装配，下一轮对话会出现在可用技能列表中。',
   version: '版本',
   author: '作者',
@@ -79,6 +88,13 @@ export const zh: Record<SkillHubLocaleKey, string> = {
   managementDescription: '关闭技能后，下一轮对话不会向 AI 提供它。',
   noInstalled: '还没有已装配的 SkillHub 技能。',
   overview: '概述',
+  viewDetails: '查看详情',
+  files: '已下载文件',
+  source: '来源',
+  changeLog: '更新日志',
+  latestVersion: '最新版本',
+  noOverview: '没有可显示的本地概述。',
+  noChangeLog: '该版本没有提供更新日志。',
   overviewTruncated: '概述内容较长，仅显示前面部分。',
   openMarketplace: '前往 SkillHub',
   openSkillHub: '在 SkillHub 查看',
@@ -117,6 +133,7 @@ export const en: Record<SkillHubLocaleKey, string> = {
   loadMore: 'Load more',
   empty: 'No skills match these filters.',
   marketError: 'The skill market is unavailable.',
+  staleMarket: 'SkillHub is unavailable. Showing the last successful results.',
   installedMessage: 'Installed. It will appear in the available skill list on the next turn.',
   version: 'Version',
   author: 'Author',
@@ -128,6 +145,13 @@ export const en: Record<SkillHubLocaleKey, string> = {
   managementDescription: 'Disabled skills are not provided to the AI on the next turn.',
   noInstalled: 'No SkillHub skills are installed.',
   overview: 'Overview',
+  viewDetails: 'View details',
+  files: 'Downloaded files',
+  source: 'Source',
+  changeLog: 'Changelog',
+  latestVersion: 'Latest version',
+  noOverview: 'No local overview is available.',
+  noChangeLog: 'No changelog is available for this version.',
   overviewTruncated: 'This overview is long, so only the beginning is shown.',
   openMarketplace: 'Open SkillHub',
   openSkillHub: 'View on SkillHub',

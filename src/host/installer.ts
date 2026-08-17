@@ -1,9 +1,9 @@
 import { createHash, randomUUID } from 'node:crypto'
-import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import type { SkillHubClient } from './catalog.ts'
-import { SkillHubHttpError } from './catalog.ts'
-import type { InstalledManifest, InstalledSkill, SkillHubDetail, SkillHubFile, SkillUpdateResult } from './types.ts'
+import { SkillHubHttpError, skillOverviewFromMarkdown } from './catalog.ts'
+import type { InstalledManifest, InstalledSkill, SkillHubDetail, SkillHubFile, SkillHubOverview, SkillUpdateResult } from './types.ts'
 
 const MANIFEST_FILE = '.dsh-withskillhub.json'
 const DISABLED_ENTRY_FILE = '.dsh-withskillhub-disabled.md'
@@ -123,6 +123,18 @@ export class SkillInstaller {
     }))
     if (changed) await this.saveManifest(resolve(this.skillsRoot), hydrated)
     return hydrated
+  }
+
+  /** Read one installed skill's local overview and downloaded file names. */
+  async localDetail(directory: string, maxBytes: number, maxCharacters: number): Promise<{ files: readonly string[], overview?: SkillHubOverview, record: InstalledSkill }> {
+    const record = (await this.installed()).find(item => item.directory === directory)
+    if (record === undefined) throw new Error(`SkillHub skill is not installed: ${directory}`)
+    const root = resolve(this.skillsRoot)
+    const target = resolve(root, record.directory)
+    this.assertInside(root, target)
+    const files = await this.localFiles(target)
+    const overview = await this.localOverview(target, maxBytes, maxCharacters)
+    return { files, ...(overview === undefined ? {} : { overview }), record }
   }
 
   /** Enable or hide one installed skill from DSH's filesystem provider. */
@@ -255,6 +267,32 @@ export class SkillInstaller {
     } else {
       await rename(active, disabled)
     }
+  }
+
+  private async localFiles(directory: string, prefix = ''): Promise<readonly string[]> {
+    const entries = await readdir(directory, { withFileTypes: true })
+    const files: string[] = []
+    for (const entry of entries) {
+      const relative = prefix.length === 0 ? entry.name : `${prefix}/${entry.name}`
+      if (entry.isDirectory()) {
+        files.push(...await this.localFiles(join(directory, entry.name), relative))
+      } else if (entry.isFile()) {
+        files.push(relative)
+      }
+    }
+    return files.sort((left, right) => left.localeCompare(right))
+  }
+
+  private async localOverview(directory: string, maxBytes: number, maxCharacters: number): Promise<SkillHubOverview | undefined> {
+    let bytes: Buffer
+    try {
+      bytes = await readFile(join(directory, 'SKILL.md'))
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
+      bytes = await readFile(join(directory, DISABLED_ENTRY_FILE))
+    }
+    if (bytes.byteLength > maxBytes) return { truncated: true }
+    return skillOverviewFromMarkdown(new TextDecoder('utf-8', { fatal: true }).decode(bytes), maxCharacters)
   }
 
   private assertInside(root: string, target: string): void {

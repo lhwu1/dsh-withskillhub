@@ -2,9 +2,10 @@ import { fileURLToPath } from 'node:url'
 import { Context, Service } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import { dshHomePath } from '@deepseek-ai/dsh-home-paths'
+import { SkillHubCache } from './cache.ts'
 import { SkillHubClient, type CatalogueQuery } from './catalog.ts'
 import { SkillInstaller } from './installer.ts'
-import type { InstalledSkill, SkillHubCategory, SkillHubDetail, SkillHubOverview, SkillHubPage, SkillUpdateResult } from './types.ts'
+import type { InstalledSkill, InstalledSkillDetail, SkillHubCategory, SkillHubDetail, SkillHubOverview, SkillHubPage, SkillHubResponse, SkillUpdateResult } from './types.ts'
 
 /** Deployment configuration for the SkillHub marketplace service. */
 export interface Config {
@@ -22,6 +23,10 @@ export interface Config {
   maxOverviewBytes?: number
   /** Largest rendered overview length after frontmatter is removed. */
   maxOverviewCharacters?: number
+  /** How long a successful SkillHub response is reused before refreshing it. */
+  cacheTtlMs?: number
+  /** How long an expired response may be shown after a refresh failure. */
+  staleCacheTtlMs?: number
 }
 
 type ResolvedConfig = Required<Config>
@@ -36,6 +41,8 @@ export class SkillHubService extends Service {
     requestTimeoutMs: z.number().step(1).min(1).default(15_000),
     maxOverviewBytes: z.number().step(1).min(1).default(256 * 1024),
     maxOverviewCharacters: z.number().step(1).min(1).default(20_000),
+    cacheTtlMs: z.number().step(1).min(0).default(5 * 60_000),
+    staleCacheTtlMs: z.number().step(1).min(0).default(24 * 60 * 60_000),
   })
 
   /** Resolved local installation directory used by the filesystem provider. */
@@ -44,6 +51,7 @@ export class SkillHubService extends Service {
   readonly packageRoot: string
   private readonly client: SkillHubClient
   private readonly installer: SkillInstaller
+  private readonly cache: SkillHubCache
   private readonly maxOverviewBytes: number
   private readonly maxOverviewCharacters: number
 
@@ -54,28 +62,29 @@ export class SkillHubService extends Service {
     this.packageRoot = fileURLToPath(new URL('../../', import.meta.url))
     this.client = new SkillHubClient(resolved.apiBaseUrl.replace(/\/+$/, ''), resolved.requestTimeoutMs)
     this.installer = new SkillInstaller(this.client, resolved.skillsRoot, resolved.maxFiles, resolved.maxPackageBytes)
+    this.cache = new SkillHubCache(resolved.cacheTtlMs, resolved.staleCacheTtlMs)
     this.maxOverviewBytes = resolved.maxOverviewBytes
     this.maxOverviewCharacters = resolved.maxOverviewCharacters
   }
 
   /** Fetch one market page. */
-  list(query: CatalogueQuery): Promise<SkillHubPage> {
-    return this.client.list(query)
+  list(query: CatalogueQuery): Promise<SkillHubResponse<SkillHubPage>> {
+    return this.cache.get(`catalogue:${JSON.stringify(query)}`, () => this.client.list(query))
   }
 
   /** Fetch current marketplace categories. */
-  categories(): Promise<readonly SkillHubCategory[]> {
-    return this.client.categories()
+  categories(): Promise<SkillHubResponse<readonly SkillHubCategory[]>> {
+    return this.cache.get('categories', () => this.client.categories())
   }
 
   /** Fetch one skill's detail record. */
-  detail(slug: string, namespace?: string): Promise<SkillHubDetail> {
-    return this.client.detail(slug, namespace)
+  detail(slug: string, namespace?: string): Promise<SkillHubResponse<SkillHubDetail>> {
+    return this.cache.get(`detail:${namespace ?? ''}/${slug}`, () => this.client.detail(slug, namespace))
   }
 
   /** Fetch the full published SKILL.md body for a selected marketplace entry. */
-  overview(slug: string, namespace?: string, version?: string): Promise<SkillHubOverview> {
-    return this.client.overview(slug, namespace, version, this.maxOverviewBytes, this.maxOverviewCharacters)
+  overview(slug: string, namespace?: string, version?: string): Promise<SkillHubResponse<SkillHubOverview>> {
+    return this.cache.get(`overview:${namespace ?? ''}/${slug}/${version ?? ''}`, () => this.client.overview(slug, namespace, version, this.maxOverviewBytes, this.maxOverviewCharacters))
   }
 
   /** Atomically install or update one selected skill. */
@@ -86,6 +95,23 @@ export class SkillHubService extends Service {
   /** List skills installed through this bundle. */
   installed(): Promise<readonly InstalledSkill[]> {
     return this.installer.installedWithMetadata()
+  }
+
+  /** Read local installation details and the latest release metadata when available. */
+  async installedDetail(directory: string): Promise<InstalledSkillDetail> {
+    const local = await this.installer.localDetail(directory, this.maxOverviewBytes, this.maxOverviewCharacters)
+    const sourceUrl = skillHubUrl(local.record.slug, local.record.namespace)
+    try {
+      const remote = await this.detail(local.record.slug, local.record.namespace)
+      return {
+        ...local,
+        changelog: remote.data.latestVersion?.changelog,
+        latestVersion: remote.data.latestVersion?.version,
+        sourceUrl,
+      }
+    } catch {
+      return { ...local, sourceUrl }
+    }
   }
 
   /** Change whether one managed skill is visible to the model. */
@@ -102,6 +128,12 @@ export class SkillHubService extends Service {
   checkUpdate(directory: string): Promise<SkillUpdateResult> {
     return this.installer.checkUpdate(directory)
   }
+}
+
+/** Build the public SkillHub marketplace URL for one installed skill. */
+function skillHubUrl(slug: string, namespace?: string): string {
+  const base = 'https://skillhub.cn/skills'
+  return namespace === undefined ? base : `${base}/${encodeURIComponent(namespace)}/${encodeURIComponent(slug)}`
 }
 
 declare module '@deepseek-ai/cordis' {

@@ -39,7 +39,18 @@ D:\harness-lh-int8\
 
 ## 第一次安装
 
-### 第一步：下载插件代码
+### 推荐方式：从 GitHub 直接安装
+
+在 DeepSeek Harness 所在目录执行：
+
+```powershell
+dsh plugin --profile web add github:lhwu1/dsh-withskillhub
+dsh web --port 3080
+```
+
+首次从 GitHub 安装时，如果 DSH 提示需要允许构建，请按提示在允许构建列表中加入 `dsh-withskillhub: true` 后重新执行安装命令。只为你信任的仓库授予构建权限。
+
+### 从源码安装：第一步，下载插件代码
 
 在 DeepSeek Harness 仓库的同级目录执行：
 
@@ -47,7 +58,7 @@ D:\harness-lh-int8\
 git clone https://github.com/lhwu1/dsh-withskillhub.git
 ```
 
-### 第二步：安装插件依赖并构建
+### 从源码安装：第二步，安装插件依赖并构建
 
 进入插件目录后执行：
 
@@ -59,7 +70,7 @@ npm run build
 
 `npm install` 会下载插件需要的依赖；`npm run build` 会生成 DSH 运行插件所需的文件。
 
-### 第三步：把插件加入 DSH 网页配置
+### 从源码安装：第三步，把插件加入 DSH 网页配置
 
 进入 DeepSeek Harness 仓库后执行：
 
@@ -70,7 +81,7 @@ pnpm dsh plugin --profile web add ..\dsh-withskillhub
 
 这一步只会向 `web` 配置加入插件行，不会修改 `packages/` 中的 Harness 源码。
 
-### 第四步：启动网页端
+### 从源码安装：第四步，启动网页端
 
 仍在 DeepSeek Harness 仓库中执行：
 
@@ -94,6 +105,8 @@ pnpm dsh web --port 3080
 ## 如何管理已经下载的技能
 
 打开“设置” → “技能管理”，这里会列出所有通过本插件装配的技能。
+
+点击技能的名称或简介会从右侧打开详情。详情来自已下载到本机的文件，即使 SkillHub 暂时不可访问，仍然可以查看本地用途、完整 `SKILL.md` 概述和文件列表；联网时还会显示最新版本和更新日志。详情中的“在 SkillHub 查看”会打开技能来源页。
 
 ### 启用和停用
 
@@ -165,6 +178,10 @@ $env:DSH_HOME\skillhub\skills
 
 概述由远端的 `SKILL.md` 提供。插件默认最多读取 256 KiB 并最多显示 20,000 个字符，避免超大技能文件拖慢页面；普通技能会显示完整正文。
 
+### 提示正在显示上次成功获取的内容
+
+这表示 SkillHub 当前无法连接、超时或返回异常数据，但插件保留了最近一次成功获取的市场内容。恢复网络后等待缓存时间结束，或者重新启动网页服务再刷新页面，即可重新请求最新数据。
+
 ### 技能需要 API Key，应该在哪里设置
 
 在该技能详情中点击“前往 SkillHub 获取 API 配置”。不同技能的 API 服务商和配置方法不同，请以该技能在 SkillHub 中的说明为准。不要把 API Key 写入插件源码或提交到 Git 仓库。
@@ -180,6 +197,8 @@ $env:DSH_HOME\skillhub\skills
 | `maxFiles` | `200` | 单个技能最多允许的文件数量。 |
 | `maxPackageBytes` | `26214400` | 单个技能所有文件允许的最大总大小。 |
 | `requestTimeoutMs` | `15000` | 每次请求 SkillHub 的最长等待时间，单位为毫秒。 |
+| `cacheTtlMs` | `300000` | 成功读取后保留市场、分类、详情和概述的时间，单位为毫秒。 |
+| `staleCacheTtlMs` | `86400000` | SkillHub 暂时不可用时，允许继续显示过期缓存的最长时间，单位为毫秒。 |
 | `maxOverviewBytes` | `262144` | 用于详情概述的 `SKILL.md` 最大读取大小。 |
 | `maxOverviewCharacters` | `20000` | 页面中最多显示的概述字符数。 |
 
