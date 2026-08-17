@@ -85,7 +85,7 @@ export class SkillHubService extends Service {
 
   /** List skills installed through this bundle. */
   installed(): Promise<readonly InstalledSkill[]> {
-    return this.installer.installed()
+    return this.installer.installedWithMetadata()
   }
 
   /** Change whether one managed skill is visible to the model. */

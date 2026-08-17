@@ -83,8 +83,9 @@ export function SkillHubManagement({ t }: Props): JSX.Element {
           const isPending = pending?.directory === skill.directory
           return <li className="skillhubManagedRow" key={skill.directory} data-disabled={!enabled}>
             <div className="skillhubManagedIdentity">
-              <strong>{skill.skillName}</strong>
-              <span>{skill.namespace === undefined ? skill.slug : `${skill.namespace}/${skill.slug}`}</span>
+              <strong>{skill.displayName ?? skill.slug}</strong>
+              {skill.description !== undefined && skill.description.length > 0 && <span className="skillhubManagedDescription">{skill.description}</span>}
+              <span className="skillhubManagedSource">{skill.namespace === undefined ? skill.slug : `${skill.namespace}/${skill.slug}`}</span>
               <span>{t('version')} {skill.version ?? t('notProvided')}</span>
             </div>
             <label className="skillhubSwitch" title={enabled ? t('enabled') : t('disabled')}>

@@ -71,7 +71,9 @@ export class SkillInstaller {
     try {
       await this.downloadFiles(temporary, slug, resolvedNamespace, version, detail, files)
       const record: InstalledSkill = {
+        description: detail.skill.summary_zh ?? detail.skill.summary ?? '',
         directory,
+        displayName: detail.skill.displayName ?? detail.slug,
         enabled: previous?.enabled !== false,
         installedAt: new Date().toISOString(),
         ...(resolvedNamespace === undefined ? {} : { namespace: resolvedNamespace }),
@@ -99,6 +101,28 @@ export class SkillInstaller {
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') return []
       throw error
     }
+  }
+
+  /** Fill missing local presentation fields for records created by older versions. */
+  async installedWithMetadata(): Promise<readonly InstalledSkill[]> {
+    const records = await this.installed()
+    let changed = false
+    const hydrated = await Promise.all(records.map(async record => {
+      if (record.displayName !== undefined && record.description !== undefined) return record
+      try {
+        const detail = await this.client.detail(record.slug, record.namespace)
+        changed = true
+        return {
+          ...record,
+          description: detail.skill.summary_zh ?? detail.skill.summary ?? '',
+          displayName: detail.skill.displayName ?? detail.slug,
+        }
+      } catch {
+        return record
+      }
+    }))
+    if (changed) await this.saveManifest(resolve(this.skillsRoot), hydrated)
+    return hydrated
   }
 
   /** Enable or hide one installed skill from DSH's filesystem provider. */

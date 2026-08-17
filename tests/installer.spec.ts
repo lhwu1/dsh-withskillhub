@@ -51,6 +51,24 @@ describe('SkillHub installer helpers', () => {
     }
   })
 
+  it('fills display metadata for an installation record created by an older plugin version', async () => {
+    const root = join(tmpdir(), `dsh-withskillhub-${Date.now()}-metadata`)
+    const directory = 'skillhub-team-example'
+    const record = { directory, enabled: true, installedAt: new Date().toISOString(), skillName: directory, slug: 'example', namespace: 'team', version: '1.0.0' }
+    await mkdir(root, { recursive: true })
+    await writeFile(join(root, '.dsh-withskillhub.json'), `${JSON.stringify({ version: 1, skills: [record] })}\n`, 'utf8')
+    const client = {
+      detail: async () => ({ skill: { displayName: 'Example Skill', slug: 'example', summary_zh: 'Explains the example workflow.' } }),
+    } as unknown as SkillHubClient
+    const installer = new SkillInstaller(client, root, 10, 1_000_000)
+    try {
+      await expect(installer.installedWithMetadata()).resolves.toEqual([{ ...record, displayName: 'Example Skill', description: 'Explains the example workflow.' }])
+      await expect(installer.installed()).resolves.toEqual([{ ...record, displayName: 'Example Skill', description: 'Explains the example workflow.' }])
+    } finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
   it('keeps a local skill when SkillHub reports that it was removed', async () => {
     const root = join(tmpdir(), `dsh-withskillhub-${Date.now()}-removed`)
     const directory = 'skillhub-team-removed'

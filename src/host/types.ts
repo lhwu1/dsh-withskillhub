@@ -78,7 +78,11 @@ export interface SkillHubOverview {
 
 /** On-disk record for a successfully installed marketplace skill. */
 export interface InstalledSkill {
+  /** Market description displayed in local skill management. */
+  description?: string
   directory: string
+  /** Market display name displayed in local skill management. */
+  displayName?: string
   enabled?: boolean
   installedAt: string
   namespace?: string
