@@ -1,0 +1,20 @@
+# This bundle owns a managed skill root. It is isolated from user-authored
+# skill directories and its provider is the only consumer of that root.
+- id: tool-skill
+  disabled: false
+
+- insert:
+    - id: dsh-withskillhub
+      name: dsh-withskillhub
+      config:
+        skillsRoot: !!js dshHomePath('skillhub', 'skills')
+    - id: dsh-withskillhub-filesystem
+      name: '@deepseek-ai/dsh-skill-filesystem'
+      inject: [skillHub]
+      config:
+        providerName: skillhub-filesystem
+        includeDefaultRoots: false
+        customSkillDirs: !!js '[ctx.skillHub.skillsRoot]'
+        watch: true
+    - id: dsh-withskillhub-web
+      name: dsh-withskillhub/web
